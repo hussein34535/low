@@ -487,6 +487,132 @@ body {
   text-align: center;
 }
 
+/* Text Input Mode Styles */
+.mode-toggle-btn {
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.mode-toggle-btn:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.submit-text-btn {
+  background: #007AFF;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.submit-text-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Magic Box / Rich Input Styles */
+.rich-input-wrapper {
+  position: relative;
+  width: 100%;
+  /* Match Result Box Style EXACTLY */
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+
+  /* Size */
+  min-height: 140px;
+
+  /* Padding handled by children to prevent clipping, 
+     OR padding on wrapper and box-sizing border-box on children.
+     Best for overlay alignment is padding on wrapper. */
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Shared styles for perfect overlay alignment */
+.rich-backdrop,
+.rich-textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  /* Must match wrapper padding if position is top/left 0? 
+                    No, if wrapper has padding, children inside are offset.
+                    Let's reset wrapper padding to 0 and put padding on children,
+                    BUT children are absolute so they cover the whole wrapper. */
+
+  /* Let's try: Wrapper has the background/border. Children are absolute 100% size.
+     They both have the same padding. */
+
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 1.1rem;
+  /* Slightly larger for better readability */
+  line-height: 1.6;
+  text-align: right;
+  direction: rtl;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  border: none;
+  border-radius: 20px;
+  /* Match wrapper */
+  margin: 0;
+  resize: none;
+  /* Disable manual resize to keep alignment */
+}
+
+/* The Backdrop (Text behind) */
+.rich-backdrop {
+  z-index: 1;
+  color: transparent;
+  /* Default text transparent */
+  background: transparent;
+  pointer-events: none;
+  /* Allow clicking through to textarea */
+}
+
+/* The Textarea (Input on top) */
+.rich-textarea {
+  z-index: 2;
+  background: transparent;
+  color: transparent;
+  /* Hide browser text */
+  caret-color: #000;
+  /* Show cursor */
+}
+
+.rich-textarea:focus {
+  outline: none;
+}
+
+.rich-textarea::placeholder {
+  color: #ccc;
+}
+
+
 /* Footer Styles */
 .dev-footer {
   position: fixed;

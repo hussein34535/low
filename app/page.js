@@ -125,6 +125,8 @@ export default function Home() {
     const [isCompleted, setIsCompleted] = useState(false);
 
     // Speech & AI Logic State
+    const [inputMode, setInputMode] = useState('voice'); // 'voice' or 'text'
+    const [textInput, setTextInput] = useState("");
     const [isRecording, setIsRecording] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [userTranscript, setUserTranscript] = useState("...");
@@ -165,6 +167,7 @@ export default function Home() {
         setMatchColor("var(--text-secondary)");
         setAiFeedback("");
         setUserTranscript("...");
+        setTextInput(""); // Clear text input
         setIsRecording(false);
         setProcessing(false);
     };
@@ -242,6 +245,14 @@ export default function Home() {
         }
     };
 
+    const handleTextSubmit = () => {
+        if (!textInput.trim()) return;
+
+        const text = textInput;
+        setUserTranscript(text);
+        analyzeTranscript(text, currentCards[currentIndex].a);
+    };
+
     const processAudio = async (blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'audio.webm');
@@ -276,40 +287,48 @@ export default function Home() {
     };
 
     const analyzeTranscript = (userText, idealText) => {
-        // Normalize: remove punctuation, tashkeel, extra spaces
+        const tokens = userText.split(/([^\w\u0600-\u06FF]+)/g);
+
+        // Normalize helper
         const normalize = (t) => {
             return t
-                .replace(/[^\w\s\u0600-\u06FF]/g, ' ') // Remove non-Arabic/English chars
-                .replace(/[أإآ]/g, 'ا') // Normalize Alif with Hamza
-                .replace(/ة/g, 'ه') // Normalize Taa Marbuta
-                .replace(/ى/g, 'ي') // Normalize Alif Maqsura
+                .replace(/[^\w\s\u0600-\u06FF]/g, ' ')
+                .replace(/[أإآ]/g, 'ا')
+                .replace(/ة/g, 'ه')
+                .replace(/ى/g, 'ي')
                 .replace(/\s+/g, ' ')
                 .trim()
                 .toLowerCase();
         };
 
-        const idealWords = normalize(idealText).split(' ').filter(w => w.length > 0);
-        const userWords = normalize(userText).split(' ').filter(w => w.length > 0);
+        const idealNormalized = normalize(idealText);
+        const idealWordsSet = new Set(idealNormalized.split(' ').filter(w => w.length > 0));
 
         let matchCount = 0;
-        const diff = [];
 
-        // Simple comparison (can be improved with fuzzy match if needed, but keeping it simple/fast as requested)
-        userWords.forEach(word => {
-            // Check if word exists in ideal answer
-            if (idealWords.includes(word)) {
-                matchCount++;
-                diff.push({ word, status: 'match' }); // Green
+        const diff = tokens.map((token, index, arr) => {
+            if (/[\w\u0600-\u06FF]/.test(token)) {
+                // It is a word
+                const normalizedToken = normalize(token);
+                if (idealWordsSet.has(normalizedToken)) {
+                    matchCount++;
+                    return { text: token, status: 'match' };
+                } else {
+                    // Check if it's the last token (currently being typed)
+                    if (index === arr.length - 1) {
+                        return { text: token, status: 'typing' };
+                    }
+                    return { text: token, status: 'wrong' };
+                }
             } else {
-                diff.push({ word, status: 'wrong' }); // Red
+                // It is a separator/space
+                return { text: token, status: 'neutral' };
             }
         });
 
         // Calculate Score
-        // Use total ideal words for denominator
-        const totalPossible = idealWords.length > 0 ? idealWords.length : 1;
-
-        // Cap score at 100
+        const idealLen = idealWordsSet.size;
+        const totalPossible = idealLen > 0 ? idealLen : 1;
         const percentage = Math.min(Math.round((matchCount / totalPossible) * 100), 100);
 
         setMatchScore(percentage);
@@ -434,47 +453,87 @@ export default function Home() {
                             </div>
 
                             {/* Controls */}
-                            <div className="controls-wrapper">
+                            <div className="controls-wrapper" style={{ position: 'relative', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                {/* Mode Toggle - Absolute Position */}
+                                <button className="mode-toggle-btn"
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        margin: 0,
+                                        zIndex: 10
+                                    }}
+                                    onClick={() => {
+                                        setInputMode(prev => prev === 'voice' ? 'text' : 'voice');
+                                        resetSpeechState();
+                                    }}>
+                                    {inputMode === 'voice' ? '⌨️' : '🎙️'}
+                                </button>
+
                                 <div className="nav-actions">
                                     <button className="nav-btn" onClick={nextCard} disabled={currentIndex === currentCards.length - 1}>
                                         <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
                                     </button>
 
-                                    <button
-                                        className={`mic-btn ${isRecording ? 'listening' : ''}`}
-                                        onClick={toggleRecording}
-                                        disabled={processing}
-                                    >
-                                        {processing ? '⏳' : (isRecording ? '⏹️ إيقاف' : '🎙️ إجابة')}
-                                    </button>
+                                    {inputMode === 'voice' && (
+                                        <button
+                                            className={`mic-btn ${isRecording ? 'listening' : ''}`}
+                                            onClick={toggleRecording}
+                                            disabled={processing}
+                                        >
+                                            {processing ? '⏳' : (isRecording ? '⏹️ إيقاف' : '🎙️ إجابة')}
+                                        </button>
+                                    )}
 
                                     <button className="nav-btn" onClick={prevCard} disabled={currentIndex === 0}>
                                         <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
                                     </button>
                                 </div>
+                            </div>
 
-                                <div className="result-box" style={{ display: 'block' }}>
-                                    <div className="result-header">
-                                        <div style={{ fontSize: '0.9rem', color: '#8E8E93', fontWeight: '500' }}>نتيجة التطابق</div>
-                                        <span style={{ color: matchColor, fontSize: '1.2rem', fontWeight: 'bold' }}>{matchScore}%</span>
-                                    </div>
-
-                                    <div className="user-answer-box">
-                                        {transcriptDiff.length > 0 ? (
-                                            transcriptDiff.map((item, idx) => (
-                                                <span key={idx} style={{
-                                                    color: item.status === 'match' ? '#34C759' :
-                                                        item.status === 'ignored' ? '#ccc' : '#FF3B30',
-                                                    margin: '0 2px'
-                                                }}>
-                                                    {item.word}{' '}
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span style={{ color: '#999' }}>...</span>
-                                        )}
-                                    </div>
+                            <div className="rich-input-wrapper">
+                                <div className="rich-backdrop">
+                                    {transcriptDiff.length > 0 ? (
+                                        transcriptDiff.map((item, idx) => (
+                                            <span key={idx} style={{
+                                                color: item.status === 'match' ? '#34C759' :
+                                                    item.status === 'wrong' ? '#FF3B30' :
+                                                        item.status === 'typing' ? '#8E8E93' : 'transparent',
+                                            }}>
+                                                {item.text}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <div style={{ color: '#ccc', direction: 'rtl', textAlign: 'right' }}>
+                                            {inputMode === 'voice' ? '...' : 'اكتب إجابتك هنا...'}
+                                        </div>
+                                    )}
                                 </div>
+
+                                {inputMode === 'text' && (
+                                    <textarea
+                                        className="rich-textarea"
+                                        value={textInput}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setTextInput(val);
+                                            setUserTranscript(val);
+                                            if (val.trim()) {
+                                                analyzeTranscript(val, currentCards[currentIndex].a);
+                                            } else {
+                                                setMatchScore(0);
+                                                setTranscriptDiff([]);
+                                            }
+                                        }}
+                                        spellCheck="false"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Score Display (Separate now) */}
+                            <div style={{ textAlign: 'center', marginTop: '-5px', marginBottom: '10px' }}>
+                                <span style={{ color: matchColor, fontSize: '1.5rem', fontWeight: 'bold' }}>{matchScore}%</span>
                             </div>
                         </>
                     ) : (
