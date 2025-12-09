@@ -409,12 +409,7 @@ export default function Home() {
                                 <div style={{ fontSize: '0.9rem', color: '#636e72', fontWeight: 'normal' }}>دقة الإجابة</div>
                                 <span style={{ color: matchColor }}>{matchScore}%</span>
                             </div>
-                            <div className="user-answer-box" style={{
-                                textAlign: 'right',
-                                direction: 'rtl',
-                                lineHeight: '1.8',
-                                marginTop: '10px'
-                            }}>
+                            <div className="user-answer-box">
                                 {transcriptDiff.length === 0 ? "..." : (
                                     transcriptDiff.map((item, idx) => {
                                         let color = 'inherit';

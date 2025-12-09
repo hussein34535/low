@@ -191,7 +191,6 @@ body {
   max-width: 900px;
   flex: 1 1 0;
   min-height: 0;
-  /* Important for flex child to shrink */
   display: flex;
   flex-direction: column;
   position: relative;
@@ -253,7 +252,6 @@ body {
   transform: rotateY(180deg);
   background: #ffffff;
   border-color: var(--accent-main);
-  /* Slight indication it's the answer */
   border-width: 2px;
 }
 
@@ -308,7 +306,6 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 12px;
-  /* Square with rounded corners looks more pro than circle */
   border: 1px solid #e2e8f0;
   background: white;
   cursor: pointer;
@@ -424,7 +421,6 @@ body {
   background: #e74c3c;
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
   animation: none;
-  /* Removed the childish pulse */
 }
 
 .result-box {
@@ -433,17 +429,44 @@ body {
   border-radius: var(--radius-md);
   width: 100%;
   border: 1px solid #e2e8f0;
-  text-align: center;
   animation: fadeIn 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .result-header {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--accent-main);
-  margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
+  padding: 0 5px;
+}
+
+/* صندوق إجابة الطالب - جديد */
+.user-answer-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: right;
+  direction: rtl;
+  line-height: 1.8;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  word-wrap: break-word;
+  /* Ensure words break if too long */
+}
+
+/* Scrollbar for answer box */
+.user-answer-box::-webkit-scrollbar {
+  width: 4px;
+}
+
+.user-answer-box::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
