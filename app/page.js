@@ -544,7 +544,7 @@ export default function Home() {
                                     background: 'white',
                                     boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
                                     border: '1px solid rgba(0,0,0,0.05)',
-                                    fontSize: '1.2rem',
+                                    fontSize: '1.6rem',
                                     cursor: 'pointer',
                                     transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                 }}
