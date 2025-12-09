@@ -195,7 +195,7 @@ export default function Home() {
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            mediaRecorderRef.current = new MediaRecorder(stream);
             chunksRef.current = [];
 
             mediaRecorderRef.current.ondataavailable = (e) => {
@@ -203,7 +203,7 @@ export default function Home() {
             };
 
             mediaRecorderRef.current.onstop = async () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const blob = new Blob(chunksRef.current);
                 await processAudio(blob);
                 stream.getTracks().forEach(track => track.stop());
             };
