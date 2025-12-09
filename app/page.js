@@ -454,23 +454,7 @@ export default function Home() {
 
                             {/* Controls */}
                             <div className="controls-wrapper" style={{ position: 'relative', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                {/* Mode Toggle - Absolute Position */}
-                                <button className="mode-toggle-btn"
-                                    style={{
-                                        position: 'absolute',
-                                        right: '10px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        margin: 0,
-                                        zIndex: 10
-                                    }}
-                                    onClick={() => {
-                                        setInputMode(prev => prev === 'voice' ? 'text' : 'voice');
-                                        resetSpeechState();
-                                    }}>
-                                    {inputMode === 'voice' ? '⌨️' : '🎙️'}
-                                </button>
-
+                                {/* Button removed from here */}
                                 <div className="nav-actions">
                                     <button className="nav-btn" onClick={nextCard} disabled={currentIndex === currentCards.length - 1}>
                                         <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
@@ -531,9 +515,36 @@ export default function Home() {
                                 )}
                             </div>
 
-                            {/* Score Display (Separate now) */}
-                            <div style={{ textAlign: 'center', marginTop: '-5px', marginBottom: '10px' }}>
+                            {/* Score Display & Controls Row */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginTop: '-5px',
+                                marginBottom: '10px',
+                                padding: '0 10px'
+                            }}>
+                                {/* Toggle Button - Bottom Left (Outside) */}
+                                <button className="mode-toggle-btn"
+                                    style={{
+                                        margin: 0,
+                                        background: 'transparent',
+                                        border: 'none',
+                                        fontSize: '1.2rem',
+                                        boxShadow: 'none',
+                                        padding: '5px'
+                                    }}
+                                    onClick={() => {
+                                        setInputMode(prev => prev === 'voice' ? 'text' : 'voice');
+                                        resetSpeechState();
+                                    }}>
+                                    {inputMode === 'voice' ? '⌨️' : '🎙️'}
+                                </button>
+
                                 <span style={{ color: matchColor, fontSize: '1.5rem', fontWeight: 'bold' }}>{matchScore}%</span>
+
+                                {/* Spacer to keep score centered */}
+                                <div style={{ width: '40px' }}></div>
                             </div>
                         </>
                     ) : (

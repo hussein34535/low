@@ -558,13 +558,10 @@ body {
   width: 100%;
   height: 100%;
   padding: 16px;
-  /* Must match wrapper padding if position is top/left 0? 
-                    No, if wrapper has padding, children inside are offset.
-                    Let's reset wrapper padding to 0 and put padding on children,
-                    BUT children are absolute so they cover the whole wrapper. */
+  padding-left: 60px;
+  /* Space for the button */
 
-  /* Let's try: Wrapper has the background/border. Children are absolute 100% size.
-     They both have the same padding. */
+  box-sizing: border-box;
 
   box-sizing: border-box;
   font-family: inherit;
