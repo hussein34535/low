@@ -515,37 +515,45 @@ export default function Home() {
                                 )}
                             </div>
 
-                            {/* Score Display & Controls Row */}
+                            {/* Score Display Only */}
                             <div style={{
                                 display: 'flex',
-                                justifyContent: 'space-between',
+                                justifyContent: 'center',
                                 alignItems: 'center',
                                 marginTop: '-5px',
                                 marginBottom: '10px',
                                 padding: '0 10px'
                             }}>
-                                {/* Toggle Button - Bottom Left (Outside) */}
-                                <button className="mode-toggle-btn"
-                                    style={{
-                                        margin: 0,
-                                        background: 'transparent',
-                                        border: 'none',
-                                        fontSize: '1.2rem',
-                                        boxShadow: 'none',
-                                        padding: '5px'
-                                    }}
-                                    onClick={() => {
-                                        setInputMode(prev => prev === 'voice' ? 'text' : 'voice');
-                                        resetSpeechState();
-                                    }}>
-                                    {inputMode === 'voice' ? '⌨️' : '🎙️'}
-                                </button>
-
                                 <span style={{ color: matchColor, fontSize: '1.5rem', fontWeight: 'bold' }}>{matchScore}%</span>
-
-                                {/* Spacer to keep score centered */}
-                                <div style={{ width: '40px' }}></div>
                             </div>
+
+                            {/* Toggle Button - Fixed at Bottom Left of Screen */}
+                            <button className="mode-toggle-btn"
+                                style={{
+                                    position: 'fixed',
+                                    bottom: '30px',
+                                    left: '30px',
+                                    zIndex: 1000,
+                                    margin: 0,
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: 'white',
+                                    boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+                                    border: '1px solid rgba(0,0,0,0.05)',
+                                    fontSize: '1.6rem',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                                }}
+                                onClick={() => {
+                                    setInputMode(prev => prev === 'voice' ? 'text' : 'voice');
+                                    resetSpeechState();
+                                }}>
+                                {inputMode === 'voice' ? '⌨️' : '🎙️'}
+                            </button>
                         </>
                     ) : (
                         <div className="completion-screen">
