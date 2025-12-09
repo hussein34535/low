@@ -126,11 +126,18 @@ export default function Home() {
     // Speech Logic State
     const [isRecording, setIsRecording] = useState(false);
     const [processing, setProcessing] = useState(false);
-    const [userTranscript, setUserTranscript] = useState("...");
     const [matchScore, setMatchScore] = useState(0);
     const [matchColor, setMatchColor] = useState("var(--text-secondary)");
+    const [transcriptDiff, setTranscriptDiff] = useState([]); // Array of { word, status }
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
+
+    // Arabic Stop Words (Common prepositions and fillers to ignore/gray out)
+    const ARABIC_STOP_WORDS = new Set([
+        "في", "من", "على", "الى", "إلى", "عن", "مع", "ان", "أن", "او", "أو",
+        "ما", "هل", "لا", "هو", "هي", "هم", "هذا", "هذه", "ذلك", "الذي", "التي",
+        "و", "ف", "ب", "ك", "ل", "يا", "اما", "أما", "ثم", "بل", "لكن", "جدا", "جداً"
+    ]);
 
     const startStudy = (category) => {
         let filtered = [];
@@ -149,7 +156,7 @@ export default function Home() {
     };
 
     const resetSpeechState = () => {
-        setUserTranscript("...");
+        setTranscriptDiff([]);
         setMatchScore(0);
         setMatchColor("var(--text-secondary)");
         setIsRecording(false);
@@ -210,7 +217,7 @@ export default function Home() {
 
             mediaRecorderRef.current.start();
             setIsRecording(true);
-            setUserTranscript("جاري الاستماع...");
+            setTranscriptDiff([{ word: "جاري الاستماع...", status: "normal" }]);
         } catch (err) {
             console.error("Mic Error:", err);
             alert("يرجى السماح باستخدام الميكروفون.");
@@ -222,7 +229,7 @@ export default function Home() {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
             setProcessing(true);
-            setUserTranscript("جاري معالجة الصوت...");
+            setTranscriptDiff([{ word: "جاري معالجة الصوت...", status: "normal" }]);
         }
     };
 
@@ -241,38 +248,63 @@ export default function Home() {
             const data = await res.json();
             const text = data.text || "";
 
-            setUserTranscript(text);
-            calculateSimilarity(text, currentCards[currentIndex].a);
+            analyzeTranscript(text, currentCards[currentIndex].a);
 
         } catch (error) {
             console.error(error);
-            setUserTranscript("حدث خطأ في المعالجة. حاول مرة أخرى.");
+            setTranscriptDiff([{ word: "حدث خطأ. حاول مرة أخرى.", status: "wrong" }]);
         } finally {
             setProcessing(false);
         }
     };
 
-    const calculateSimilarity = (str1, str2) => {
+    const analyzeTranscript = (userText, modelText) => {
+        // Normalization
         const normalize = (s) => s.replace(/[^\u0621-\u064A\s]/g, "").trim();
-        const s1 = normalize(str1);
-        const s2 = normalize(str2);
 
-        if (!s1 || !s2) {
+        const cleanUser = normalize(userText);
+        const cleanModel = normalize(modelText);
+
+        if (!cleanUser || !cleanModel) {
+            setTranscriptDiff([]);
             setMatchScore(0);
             return;
         }
 
-        const words1 = new Set(s1.split(/\s+/));
-        const words2 = new Set(s2.split(/\s+/));
+        const userWords = cleanUser.split(/\s+/);
+        const modelWordsSet = new Set(cleanModel.split(/\s+/));
 
-        const intersection = new Set([...words1].filter(x => words2.has(x)));
-        const union = new Set([...words1, ...words2]);
+        // Filter model words to filter out stop words for accurate denominator in score
+        const significantModelWords = new Set([...modelWordsSet].filter(w => !ARABIC_STOP_WORDS.has(w)));
 
-        const score = Math.round((intersection.size / union.size) * 100);
-        setMatchScore(score);
+        let correctCount = 0;
+        const diffResult = userWords.map(word => {
+            const isStopWord = ARABIC_STOP_WORDS.has(word);
 
-        if (score > 80) setMatchColor("#00b894");
-        else if (score > 50) setMatchColor("#fdcb6e");
+            if (modelWordsSet.has(word)) {
+                if (!isStopWord) correctCount++;
+                return { word, status: 'correct' }; // Green
+            } else if (isStopWord) {
+                return { word, status: 'extra' }; // Gray (Ignored)
+            } else {
+                return { word, status: 'wrong' }; // Red
+            }
+        });
+
+        setTranscriptDiff(diffResult);
+
+        // Score Calculation: Significant Matches / Significant Total
+        const totalSignificant = significantModelWords.size;
+        const score = totalSignificant > 0 ? Math.round((correctCount / totalSignificant) * 100) : 0;
+
+        // Cap at 100% just in case
+        const finalScore = Math.min(100, score);
+
+
+        setMatchScore(finalScore);
+
+        if (finalScore > 80) setMatchColor("#00b894");
+        else if (finalScore > 50) setMatchColor("#fdcb6e");
         else setMatchColor("#d63031");
     };
 
@@ -346,7 +378,6 @@ export default function Home() {
                                 <div className="card-instruction">اضغط لإظهار الإجابة</div>
                             </div>
                             <div className="flashcard-face flashcard-back">
-                                <span className="card-tag" style={{ background: '#e3f2fd', color: '#0984e3' }}>الإجابة النموذجية</span>
                                 <div className="content-text">
                                     {currentCards[currentIndex].a}
                                 </div>
@@ -379,9 +410,29 @@ export default function Home() {
                                 <div style={{ fontSize: '0.9rem', color: '#636e72', fontWeight: 'normal' }}>دقة الإجابة</div>
                                 <span style={{ color: matchColor }}>{matchScore}%</span>
                             </div>
-                            <div className="user-answer-box">
-                                <strong>إجابتك:</strong>
-                                <p>{userTranscript}</p>
+                            <div className="user-answer-box" style={{
+                                textAlign: 'right',
+                                direction: 'rtl',
+                                lineHeight: '1.8',
+                                marginTop: '10px'
+                            }}>
+                                {transcriptDiff.length === 0 ? "..." : (
+                                    transcriptDiff.map((item, idx) => {
+                                        let color = 'inherit';
+                                        if (item.status === 'correct') color = '#00b894'; // Green
+                                        else if (item.status === 'wrong') color = '#d63031'; // Red
+                                        else if (item.status === 'extra') color = '#b2bec3'; // Gray
+
+                                        // Make wrong words bold
+                                        const fontWeight = item.status === 'wrong' || item.status === 'correct' ? 'bold' : 'normal';
+
+                                        return (
+                                            <span key={idx} style={{ color, fontWeight, margin: '0 2px' }}>
+                                                {item.word}
+                                            </span>
+                                        )
+                                    })
+                                )}
                             </div>
                         </div>
                     </div>
