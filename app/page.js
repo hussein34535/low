@@ -531,20 +531,20 @@ export default function Home() {
                             <button className="mode-toggle-btn"
                                 style={{
                                     position: 'fixed',
-                                    bottom: '30px',
-                                    left: '30px',
+                                    bottom: '20px',
+                                    left: '20px',
                                     zIndex: 1000,
                                     margin: 0,
-                                    width: '60px',
-                                    height: '60px',
+                                    width: '45px',
+                                    height: '45px',
                                     borderRadius: '50%',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     background: 'white',
-                                    boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
                                     border: '1px solid rgba(0,0,0,0.05)',
-                                    fontSize: '1.6rem',
+                                    fontSize: '1.2rem',
                                     cursor: 'pointer',
                                     transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                 }}
