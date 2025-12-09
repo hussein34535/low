@@ -485,7 +485,7 @@ export default function Home() {
                 </div>
             )
             }
-            <div className="dev-footer">© 7𝖊$𝖊𝒏</div>
+            {currentScreen === 'home' && <div className="dev-footer">© 7𝖊$𝖊𝒏</div>}
         </main >
     );
 }
