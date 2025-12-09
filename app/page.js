@@ -259,12 +259,12 @@ export default function Home() {
             const text = data.text || "";
             setUserTranscript(text);
 
-            // 2. Evaluate with AI
-            if (text.trim().length > 2) {
-                await evaluateAnswer(text, currentCards[currentIndex].a);
+            // 2. Static Analysis
+            if (text.trim().length > 0) {
+                analyzeTranscript(text, currentCards[currentIndex].a);
             } else {
                 setMatchScore(0);
-                setAiFeedback("لم يتم اكتشاف صوت واضح.");
+                setTranscriptDiff([]);
             }
 
         } catch (error) {
@@ -275,36 +275,49 @@ export default function Home() {
         }
     };
 
-    const evaluateAnswer = async (userText, modelText) => {
-        setAiFeedback("جاري التصحيح بالذكاء الاصطناعي... 🤖");
-        // Temporary score while waiting
-        setMatchScore(0);
-        setMatchColor("var(--text-secondary)");
+    const analyzeTranscript = (userText, idealText) => {
+        // Normalize: remove punctuation, tashkeel, extra spaces
+        const normalize = (t) => t.replace(/[^\w\s\u0600-\u06FF]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 
-        try {
-            const res = await fetch('/api/evaluate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userText, modelText })
-            });
+        const idealWords = normalize(idealText).split(' ').filter(w => w.length > 0);
+        const userWords = normalize(userText).split(' ').filter(w => w.length > 0);
 
-            if (!res.ok) throw new Error("Evaluation failed");
+        let matchCount = 0;
+        const diff = [];
 
-            const result = await res.json();
+        // Simple comparison (can be improved with fuzzy match if needed, but keeping it simple/fast as requested)
+        userWords.forEach(word => {
+            // Check if word is a stop word
+            if (ARABIC_STOP_WORDS.has(word)) {
+                diff.push({ word, status: 'ignored' }); // Gray
+                return;
+            }
 
-            const score = result.score || 0;
-            setMatchScore(score);
+            // Check if word exists in ideal answer
+            if (idealWords.includes(word)) {
+                matchCount++;
+                diff.push({ word, status: 'match' }); // Green
+            } else {
+                diff.push({ word, status: 'wrong' }); // Red
+            }
+        });
 
-            if (score > 80) setMatchColor("#34C759"); // iOS Green
-            else if (score > 50) setMatchColor("#FF9500"); // iOS Orange
-            else setMatchColor("#FF3B30"); // iOS Red
+        // Calculate Score
+        // We only count non-stop words in ideal for the denominator to be fair
+        const meaningfulIdealCount = idealWords.filter(w => !ARABIC_STOP_WORDS.has(w)).length;
+        // Avoid division by zero
+        const totalPossible = meaningfulIdealCount > 0 ? meaningfulIdealCount : 1;
 
-            setAiFeedback(result.feedback || "");
+        // Cap score at 100
+        const percentage = Math.min(Math.round((matchCount / totalPossible) * 100), 100);
 
-        } catch (err) {
-            console.error(err);
-            setAiFeedback("فشل الاتصال بخادم الذكاء الاصطناعي.");
-        }
+        setMatchScore(percentage);
+        setTranscriptDiff(diff);
+
+        // Set Color
+        if (percentage > 80) setMatchColor("#34C759");
+        else if (percentage > 50) setMatchColor("#FF9500");
+        else setMatchColor("#FF3B30");
     };
 
     // Helper to format answers
@@ -441,31 +454,25 @@ export default function Home() {
 
                                 <div className="result-box" style={{ display: 'block' }}>
                                     <div className="result-header">
-                                        <div style={{ fontSize: '0.9rem', color: '#8E8E93', fontWeight: '500' }}>التقييم الذكي</div>
+                                        <div style={{ fontSize: '0.9rem', color: '#8E8E93', fontWeight: '500' }}>نتيجة التطابق</div>
                                         <span style={{ color: matchColor, fontSize: '1.2rem', fontWeight: 'bold' }}>{matchScore}%</span>
                                     </div>
 
                                     <div className="user-answer-box">
-                                        <strong style={{ color: '#000', display: 'block', marginBottom: '4px' }}>إجابتك:</strong>
-                                        {userTranscript}
+                                        {transcriptDiff.length > 0 ? (
+                                            transcriptDiff.map((item, idx) => (
+                                                <span key={idx} style={{
+                                                    color: item.status === 'match' ? '#34C759' :
+                                                        item.status === 'ignored' ? '#ccc' : '#FF3B30',
+                                                    margin: '0 2px'
+                                                }}>
+                                                    {item.word}{' '}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span style={{ color: '#999' }}>...</span>
+                                        )}
                                     </div>
-
-                                    {aiFeedback && (
-                                        <div style={{
-                                            marginTop: '8px',
-                                            padding: '12px',
-                                            background: 'rgba(0,122,255,0.08)',
-                                            borderRadius: '12px',
-                                            fontSize: '0.95rem',
-                                            color: '#007AFF',
-                                            textAlign: 'right',
-                                            lineHeight: '1.5',
-                                            fontWeight: '500',
-                                            border: '1px solid rgba(0,122,255,0.1)'
-                                        }}>
-                                            ✨ {aiFeedback}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </>
