@@ -146,8 +146,7 @@ export default function Home() {
         } else {
             filtered = originalData.filter(item => item.cat === category);
         }
-        // Shuffle
-        filtered.sort(() => Math.random() - 0.5);
+        // No Shuffle - Keep original order
         setCurrentCards(filtered);
         setCurrentIndex(0);
         setIsFlipped(false);
@@ -388,8 +387,8 @@ export default function Home() {
                     {/* Controls */}
                     <div className="controls-wrapper">
                         <div className="nav-actions">
-                            <button className="nav-btn" onClick={prevCard} disabled={currentIndex === 0}>
-                                <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
+                            <button className="nav-btn" onClick={nextCard} disabled={currentIndex === currentCards.length - 1}>
+                                <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
                             </button>
 
                             <button
@@ -400,8 +399,8 @@ export default function Home() {
                                 {processing ? '⏳' : (isRecording ? '⏹️ إيقاف' : '🎙️ إجابة')}
                             </button>
 
-                            <button className="nav-btn" onClick={nextCard} disabled={currentIndex === currentCards.length - 1}>
-                                <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
+                            <button className="nav-btn" onClick={prevCard} disabled={currentIndex === 0}>
+                                <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
                             </button>
                         </div>
 
