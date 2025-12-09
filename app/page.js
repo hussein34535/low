@@ -277,7 +277,16 @@ export default function Home() {
 
     const analyzeTranscript = (userText, idealText) => {
         // Normalize: remove punctuation, tashkeel, extra spaces
-        const normalize = (t) => t.replace(/[^\w\s\u0600-\u06FF]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+        const normalize = (t) => {
+            return t
+                .replace(/[^\w\s\u0600-\u06FF]/g, ' ') // Remove non-Arabic/English chars
+                .replace(/[أإآ]/g, 'ا') // Normalize Alif with Hamza
+                .replace(/ة/g, 'ه') // Normalize Taa Marbuta
+                .replace(/ى/g, 'ي') // Normalize Alif Maqsura
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+        };
 
         const idealWords = normalize(idealText).split(' ').filter(w => w.length > 0);
         const userWords = normalize(userText).split(' ').filter(w => w.length > 0);
@@ -287,12 +296,6 @@ export default function Home() {
 
         // Simple comparison (can be improved with fuzzy match if needed, but keeping it simple/fast as requested)
         userWords.forEach(word => {
-            // Check if word is a stop word
-            if (ARABIC_STOP_WORDS.has(word)) {
-                diff.push({ word, status: 'ignored' }); // Gray
-                return;
-            }
-
             // Check if word exists in ideal answer
             if (idealWords.includes(word)) {
                 matchCount++;
@@ -303,10 +306,8 @@ export default function Home() {
         });
 
         // Calculate Score
-        // We only count non-stop words in ideal for the denominator to be fair
-        const meaningfulIdealCount = idealWords.filter(w => !ARABIC_STOP_WORDS.has(w)).length;
-        // Avoid division by zero
-        const totalPossible = meaningfulIdealCount > 0 ? meaningfulIdealCount : 1;
+        // Use total ideal words for denominator
+        const totalPossible = idealWords.length > 0 ? idealWords.length : 1;
 
         // Cap score at 100
         const percentage = Math.min(Math.round((matchCount / totalPossible) * 100), 100);
