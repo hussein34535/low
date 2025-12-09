@@ -303,6 +303,39 @@ export default function Home() {
         }
     };
 
+    // Helper to format answers
+    const formatAnswer = (text) => {
+        if (!text) return text;
+
+        // Regex to identify list items (numbered 1), 1-, bullet points, or specific Arabic keywords like "First", "The first pillar")
+        const listPattern = /(?:^|\s)((?:[\d١-٩]+[\)\-\.])|(?:[-•])|(?:أولاً|ثانياً|ثالثاً|رابعاً|خامساً)(?:\s*[-:])?|(?:(?:الركن|الحالة|الشرط|الطائفة|السبب)\s+(?:الأول|الثاني|الثالث|الرابع|الخامس|الأولى|الثانية|الثالثة|الرابعة|الخامسة)(?:\s*[:])?))/g;
+
+        // Check if text contains these patterns
+        if (listPattern.test(text)) {
+            // Split text by these patterns, but keep the delimiter (using capture group in split is tricky, better to mark and split)
+            // We will insert a special marker before the match
+            const markedText = text.replace(listPattern, "\n$1");
+            const lines = markedText.split('\n').map(l => l.trim()).filter(l => l);
+
+            if (lines.length > 1) {
+                return (
+                    <div className="answer-list-container">
+                        {lines.map((line, idx) => (
+                            <div key={idx} className="answer-line">{line}</div>
+                        ))}
+                    </div>
+                );
+            }
+        }
+
+        // If simply long text (> 100 chars), reduce font
+        if (text.length > 100) {
+            return <div className="long-text-answer">{text}</div>;
+        }
+
+        return text;
+    };
+
     return (
         <main style={{ width: '100%', height: '100%' }}>
             {currentScreen === 'home' && (
@@ -374,7 +407,7 @@ export default function Home() {
                             </div>
                             <div className="flashcard-face flashcard-back">
                                 <div className="content-text">
-                                    {currentCards[currentIndex].a}
+                                    {formatAnswer(currentCards[currentIndex].a)}
                                 </div>
                             </div>
                         </div>

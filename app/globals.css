@@ -459,3 +459,30 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Formatted Answer List Styles */
+.answer-list-container {
+  text-align: right;
+  width: 100%;
+  margin-top: 5px;
+  padding: 0 10px;
+}
+
+.answer-line {
+  font-size: 1.15rem;
+  padding: 8px 0;
+  line-height: 1.6;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  color: #333;
+  display: block;
+}
+
+.answer-line:last-child {
+  border-bottom: none;
+}
+
+.long-text-answer {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  text-align: center;
+}
