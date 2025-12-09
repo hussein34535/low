@@ -123,12 +123,15 @@ export default function Home() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
 
-    // Speech Logic State
+    // Speech & AI Logic State
     const [isRecording, setIsRecording] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [userTranscript, setUserTranscript] = useState("...");
     const [matchScore, setMatchScore] = useState(0);
     const [matchColor, setMatchColor] = useState("var(--text-secondary)");
-    const [transcriptDiff, setTranscriptDiff] = useState([]); // Array of { word, status }
+    const [aiFeedback, setAiFeedback] = useState("");
+    const [transcriptDiff, setTranscriptDiff] = useState([]); // Kept for state compatibility but unused in UI
+
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
 
@@ -158,6 +161,8 @@ export default function Home() {
         setTranscriptDiff([]);
         setMatchScore(0);
         setMatchColor("var(--text-secondary)");
+        setAiFeedback("");
+        setUserTranscript("...");
         setIsRecording(false);
         setProcessing(false);
     };
@@ -216,7 +221,8 @@ export default function Home() {
 
             mediaRecorderRef.current.start();
             setIsRecording(true);
-            setTranscriptDiff([{ word: "جاري الاستماع...", status: "normal" }]);
+            setUserTranscript("جاري الاستماع...");
+            setAiFeedback("");
         } catch (err) {
             console.error("Mic Error:", err);
             alert("يرجى السماح باستخدام الميكروفون.");
@@ -228,7 +234,7 @@ export default function Home() {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
             setProcessing(true);
-            setTranscriptDiff([{ word: "جاري معالجة الصوت...", status: "normal" }]);
+            setUserTranscript("جاري معالجة الصوت...");
         }
     };
 
@@ -237,6 +243,7 @@ export default function Home() {
         formData.append('file', blob, 'audio.webm');
 
         try {
+            // 1. Transcribe
             const res = await fetch('/api/transcribe', {
                 method: 'POST',
                 body: formData,
@@ -246,65 +253,54 @@ export default function Home() {
 
             const data = await res.json();
             const text = data.text || "";
+            setUserTranscript(text);
 
-            analyzeTranscript(text, currentCards[currentIndex].a);
+            // 2. Evaluate with AI
+            if (text.trim().length > 2) {
+                await evaluateAnswer(text, currentCards[currentIndex].a);
+            } else {
+                setMatchScore(0);
+                setAiFeedback("لم يتم اكتشاف صوت واضح.");
+            }
 
         } catch (error) {
             console.error(error);
-            setTranscriptDiff([{ word: "حدث خطأ. حاول مرة أخرى.", status: "wrong" }]);
+            setUserTranscript("حدث خطأ في المعالجة. حاول مرة أخرى.");
         } finally {
             setProcessing(false);
         }
     };
 
-    const analyzeTranscript = (userText, modelText) => {
-        // Normalization
-        const normalize = (s) => s.replace(/[^\u0621-\u064A\s]/g, "").trim();
+    const evaluateAnswer = async (userText, modelText) => {
+        setAiFeedback("جاري التصحيح بالذكاء الاصطناعي... 🤖");
+        // Temporary score while waiting
+        setMatchScore(0);
+        setMatchColor("var(--text-secondary)");
 
-        const cleanUser = normalize(userText);
-        const cleanModel = normalize(modelText);
+        try {
+            const res = await fetch('/api/evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userText, modelText })
+            });
 
-        if (!cleanUser || !cleanModel) {
-            setTranscriptDiff([]);
-            setMatchScore(0);
-            return;
+            if (!res.ok) throw new Error("Evaluation failed");
+
+            const result = await res.json();
+
+            const score = result.score || 0;
+            setMatchScore(score);
+
+            if (score > 80) setMatchColor("#34C759"); // iOS Green
+            else if (score > 50) setMatchColor("#FF9500"); // iOS Orange
+            else setMatchColor("#FF3B30"); // iOS Red
+
+            setAiFeedback(result.feedback || "");
+
+        } catch (err) {
+            console.error(err);
+            setAiFeedback("فشل الاتصال بخادم الذكاء الاصطناعي.");
         }
-
-        const userWords = cleanUser.split(/\s+/);
-        const modelWordsSet = new Set(cleanModel.split(/\s+/));
-
-        // Filter model words to filter out stop words for accurate denominator in score
-        const significantModelWords = new Set([...modelWordsSet].filter(w => !ARABIC_STOP_WORDS.has(w)));
-
-        let correctCount = 0;
-        const diffResult = userWords.map(word => {
-            const isStopWord = ARABIC_STOP_WORDS.has(word);
-
-            if (modelWordsSet.has(word)) {
-                if (!isStopWord) correctCount++;
-                return { word, status: 'correct' }; // Green
-            } else if (isStopWord) {
-                return { word, status: 'extra' }; // Gray (Ignored)
-            } else {
-                return { word, status: 'wrong' }; // Red
-            }
-        });
-
-        setTranscriptDiff(diffResult);
-
-        // Score Calculation: Significant Matches / Significant Total
-        const totalSignificant = significantModelWords.size;
-        const score = totalSignificant > 0 ? Math.round((correctCount / totalSignificant) * 100) : 0;
-
-        // Cap at 100% just in case
-        const finalScore = Math.min(100, score);
-
-
-        setMatchScore(finalScore);
-
-        if (finalScore > 80) setMatchColor("#00b894");
-        else if (finalScore > 50) setMatchColor("#fdcb6e");
-        else setMatchColor("#d63031");
     };
 
     return (
@@ -406,28 +402,31 @@ export default function Home() {
 
                         <div className="result-box" style={{ display: 'block' }}>
                             <div className="result-header">
-                                <div style={{ fontSize: '0.9rem', color: '#636e72', fontWeight: 'normal' }}>دقة الإجابة</div>
-                                <span style={{ color: matchColor }}>{matchScore}%</span>
+                                <div style={{ fontSize: '0.9rem', color: '#8E8E93', fontWeight: '500' }}>التقييم الذكي</div>
+                                <span style={{ color: matchColor, fontSize: '1.2rem', fontWeight: 'bold' }}>{matchScore}%</span>
                             </div>
+
                             <div className="user-answer-box">
-                                {transcriptDiff.length === 0 ? "..." : (
-                                    transcriptDiff.map((item, idx) => {
-                                        let color = 'inherit';
-                                        if (item.status === 'correct') color = '#00b894'; // Green
-                                        else if (item.status === 'wrong') color = '#d63031'; // Red
-                                        else if (item.status === 'extra') color = '#b2bec3'; // Gray
-
-                                        // Make wrong words bold
-                                        const fontWeight = item.status === 'wrong' || item.status === 'correct' ? 'bold' : 'normal';
-
-                                        return (
-                                            <span key={idx} style={{ color, fontWeight, margin: '0 2px' }}>
-                                                {item.word}
-                                            </span>
-                                        )
-                                    })
-                                )}
+                                <strong style={{ color: '#000', display: 'block', marginBottom: '4px' }}>إجابتك:</strong>
+                                {userTranscript}
                             </div>
+
+                            {aiFeedback && (
+                                <div style={{
+                                    marginTop: '8px',
+                                    padding: '12px',
+                                    background: 'rgba(0,122,255,0.08)',
+                                    borderRadius: '12px',
+                                    fontSize: '0.95rem',
+                                    color: '#007AFF',
+                                    textAlign: 'right',
+                                    lineHeight: '1.5',
+                                    fontWeight: '500',
+                                    border: '1px solid rgba(0,122,255,0.1)'
+                                }}>
+                                    ✨ {aiFeedback}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
