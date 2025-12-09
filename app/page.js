@@ -122,6 +122,7 @@ export default function Home() {
     const [currentCards, setCurrentCards] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
 
     // Speech & AI Logic State
     const [isRecording, setIsRecording] = useState(false);
@@ -153,6 +154,7 @@ export default function Home() {
         setCurrentCards(filtered);
         setCurrentIndex(0);
         setIsFlipped(false);
+        setIsCompleted(false);
         resetSpeechState();
         setCurrentScreen('study');
     };
@@ -182,6 +184,8 @@ export default function Home() {
             setCurrentIndex(prev => prev + 1);
             setIsFlipped(false);
             resetSpeechState();
+        } else {
+            setIsCompleted(true);
         }
     };
 
@@ -379,91 +383,109 @@ export default function Home() {
 
             {currentScreen === 'study' && currentCards.length > 0 && (
                 <div id="studyScreen">
-                    <div className="study-header">
-                        <button className="back-button" onClick={goHome}>
-                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
-                            </svg>
-                            الرئيسية
-                        </button>
-                        <div className="progress-container">
-                            <span className="progress-numbers">{currentIndex + 1} / {currentCards.length}</span>
-                            <div className="progress-bar-bg">
-                                <div className="progress-bar-fill" style={{ width: `${((currentIndex + 1) / currentCards.length) * 100}%` }}></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flashcard-container">
-                        <div className={`flashcard-inner ${isFlipped ? 'flipped' : ''}`} onClick={flipCard}>
-                            <div className="flashcard-face flashcard-front">
-                                <span className="card-tag" style={{ background: '#f1f2f6', color: '#a4b0be' }}>
-                                    {currentCards[currentIndex].cat}
-                                </span>
-                                <div className="content-text">
-                                    {currentCards[currentIndex].q}
-                                </div>
-                                <div className="card-instruction">اضغط لإظهار الإجابة</div>
-                            </div>
-                            <div className="flashcard-face flashcard-back">
-                                <div className="content-text">
-                                    {formatAnswer(currentCards[currentIndex].a)}
+                    {!isCompleted ? (
+                        <>
+                            <div className="study-header">
+                                <button className="back-button" onClick={goHome}>
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                                    </svg>
+                                    الرئيسية
+                                </button>
+                                <div className="progress-container">
+                                    <span className="progress-numbers">{currentIndex + 1} / {currentCards.length}</span>
+                                    <div className="progress-bar-bg">
+                                        <div className="progress-bar-fill" style={{ width: `${((currentIndex + 1) / currentCards.length) * 100}%` }}></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Controls */}
-                    <div className="controls-wrapper">
-                        <div className="nav-actions">
-                            <button className="nav-btn" onClick={nextCard} disabled={currentIndex === currentCards.length - 1}>
-                                <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
-                            </button>
-
-                            <button
-                                className={`mic-btn ${isRecording ? 'listening' : ''}`}
-                                onClick={toggleRecording}
-                                disabled={processing}
-                            >
-                                {processing ? '⏳' : (isRecording ? '⏹️ إيقاف' : '🎙️ إجابة')}
-                            </button>
-
-                            <button className="nav-btn" onClick={prevCard} disabled={currentIndex === 0}>
-                                <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
-                            </button>
-                        </div>
-
-                        <div className="result-box" style={{ display: 'block' }}>
-                            <div className="result-header">
-                                <div style={{ fontSize: '0.9rem', color: '#8E8E93', fontWeight: '500' }}>التقييم الذكي</div>
-                                <span style={{ color: matchColor, fontSize: '1.2rem', fontWeight: 'bold' }}>{matchScore}%</span>
-                            </div>
-
-                            <div className="user-answer-box">
-                                <strong style={{ color: '#000', display: 'block', marginBottom: '4px' }}>إجابتك:</strong>
-                                {userTranscript}
-                            </div>
-
-                            {aiFeedback && (
-                                <div style={{
-                                    marginTop: '8px',
-                                    padding: '12px',
-                                    background: 'rgba(0,122,255,0.08)',
-                                    borderRadius: '12px',
-                                    fontSize: '0.95rem',
-                                    color: '#007AFF',
-                                    textAlign: 'right',
-                                    lineHeight: '1.5',
-                                    fontWeight: '500',
-                                    border: '1px solid rgba(0,122,255,0.1)'
-                                }}>
-                                    ✨ {aiFeedback}
+                            <div className="flashcard-container">
+                                <div className={`flashcard-inner ${isFlipped ? 'flipped' : ''}`} onClick={flipCard}>
+                                    <div className="flashcard-face flashcard-front">
+                                        <span className="card-tag" style={{ background: '#f1f2f6', color: '#a4b0be' }}>
+                                            {currentCards[currentIndex].cat}
+                                        </span>
+                                        <div className="content-text">
+                                            {currentCards[currentIndex].q}
+                                        </div>
+                                        <div className="card-instruction">اضغط لإظهار الإجابة</div>
+                                    </div>
+                                    <div className="flashcard-face flashcard-back">
+                                        <div className="content-text">
+                                            {formatAnswer(currentCards[currentIndex].a)}
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Controls */}
+                            <div className="controls-wrapper">
+                                <div className="nav-actions">
+                                    <button className="nav-btn" onClick={nextCard} disabled={currentIndex === currentCards.length - 1}>
+                                        <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" /></svg>
+                                    </button>
+
+                                    <button
+                                        className={`mic-btn ${isRecording ? 'listening' : ''}`}
+                                        onClick={toggleRecording}
+                                        disabled={processing}
+                                    >
+                                        {processing ? '⏳' : (isRecording ? '⏹️ إيقاف' : '🎙️ إجابة')}
+                                    </button>
+
+                                    <button className="nav-btn" onClick={prevCard} disabled={currentIndex === 0}>
+                                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
+                                    </button>
+                                </div>
+
+                                <div className="result-box" style={{ display: 'block' }}>
+                                    <div className="result-header">
+                                        <div style={{ fontSize: '0.9rem', color: '#8E8E93', fontWeight: '500' }}>التقييم الذكي</div>
+                                        <span style={{ color: matchColor, fontSize: '1.2rem', fontWeight: 'bold' }}>{matchScore}%</span>
+                                    </div>
+
+                                    <div className="user-answer-box">
+                                        <strong style={{ color: '#000', display: 'block', marginBottom: '4px' }}>إجابتك:</strong>
+                                        {userTranscript}
+                                    </div>
+
+                                    {aiFeedback && (
+                                        <div style={{
+                                            marginTop: '8px',
+                                            padding: '12px',
+                                            background: 'rgba(0,122,255,0.08)',
+                                            borderRadius: '12px',
+                                            fontSize: '0.95rem',
+                                            color: '#007AFF',
+                                            textAlign: 'right',
+                                            lineHeight: '1.5',
+                                            fontWeight: '500',
+                                            border: '1px solid rgba(0,122,255,0.1)'
+                                        }}>
+                                            ✨ {aiFeedback}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="completion-screen">
+                            <div className="completion-icon">🎉</div>
+                            <div className="completion-title">أحسنت!</div>
+                            <div className="completion-text">
+                                لقد أتممت جميع أسئلة هذا القسم بنجاح.<br />
+                                استمر في التدريب لتحقيق التفوق.
+                            </div>
+                            <button className="mic-btn" style={{ width: 'auto', padding: '0 40px' }} onClick={goHome}>
+                                العودة للرئيسية
+                            </button>
                         </div>
-                    </div>
+                    )}
                 </div>
-            )}
-        </main>
+            )
+            }
+            <div className="dev-footer">© 7𝖊$𝖊𝒏</div>
+        </main >
     );
 }

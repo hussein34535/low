@@ -36,10 +36,12 @@ export async function POST(request) {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:3000", // Required for free tier
+                "X-Title": "Flashcard App"
             },
             body: JSON.stringify({
-                model: "openai/gpt-oss-120b:free",
+                model: "openai/gpt-oss-20b:free",
                 messages: [
                     { role: "system", content: "You are a helpful assistant that outputs JSON only." },
                     { role: "user", content: prompt }
@@ -48,8 +50,16 @@ export async function POST(request) {
         });
 
         if (!response.ok) {
-            const err = await response.text();
-            console.error("OpenRouter Error:", err);
+            const errText = await response.text();
+            console.error("OpenRouter Error:", errText);
+
+            if (response.status === 404 && errText.includes("data policy")) {
+                return NextResponse.json({
+                    score: 0,
+                    feedback: "⚠️ خطأ: يجب تفعيل خيار 'Allow training on my data' في إعدادات OpenRouter لاستخدام الموديلات المجانية."
+                });
+            }
+
             throw new Error(`OpenRouter API Error: ${response.status}`);
         }
 
@@ -75,6 +85,10 @@ export async function POST(request) {
 
     } catch (error) {
         console.error('Evaluation Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        // Return a safe error message to the UI instead of 500
+        return NextResponse.json({
+            score: 0,
+            feedback: "حدث خطأ في الاتصال بالذكاء الاصطناعي. يرجى المحاولة لاحقاً."
+        });
     }
 }
