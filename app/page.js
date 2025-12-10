@@ -443,6 +443,13 @@ export default function Home() {
                     </div>
 
                     <div className="cards-grid">
+                        <div className="category-card" style={{ '--card-color': 'var(--accent-criminal, #ff5252)', '--icon-bg': '#ffebee' }}
+                            onClick={() => startStudy('الإجراءات الجنائية')}>
+                            <div className="cat-icon-box">🔍</div>
+                            <div className="cat-title">الإجراءات الجنائية</div>
+                            <div className="cat-meta">57 سؤال</div>
+                        </div>
+
                         <div className="category-card" style={{ '--card-color': 'var(--accent-nation)', '--icon-bg': '#e3f2fd' }}
                             onClick={() => startStudy('الجنسية')}>
                             <div className="cat-icon-box">🏛️</div>
@@ -462,13 +469,6 @@ export default function Home() {
                             <div className="cat-icon-box">⚖️</div>
                             <div className="cat-title">تنازع القوانين</div>
                             <div className="cat-meta">40 سؤال</div>
-                        </div>
-
-                        <div className="category-card" style={{ '--card-color': 'var(--accent-criminal, #ff5252)', '--icon-bg': '#ffebee' }}
-                            onClick={() => startStudy('الإجراءات الجنائية')}>
-                            <div className="cat-icon-box">🔍</div>
-                            <div className="cat-title">الإجراءات الجنائية</div>
-                            <div className="cat-meta">57 سؤال</div>
                         </div>
 
                         <div className="category-card" style={{ '--card-color': 'var(--accent-main)', '--icon-bg': '#ede7f6' }}
